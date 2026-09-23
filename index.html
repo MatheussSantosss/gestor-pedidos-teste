@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestor de Pedidos - OCR Nuvem</title>
+  <title>Gestor de Pedidos - Leitor Nuvem</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -28,25 +28,25 @@
         <div class="flex flex-col items-center justify-center pt-5 pb-6">
           <i class="fa-solid fa-camera text-3xl text-purple-600 mb-2"></i>
           <p class="text-sm text-purple-700 font-semibold">Tirar Foto da Comanda</p>
-          <p class="text-xs text-purple-500">Processamento super rápido na nuvem</p>
+          <p class="text-xs text-purple-500">Leitura instantânea na nuvem</p>
         </div>
         <input id="cameraInput" type="file" accept="image/*" capture="environment" class="hidden" onchange="enviarParaOCR(event)">
       </label>
     </div>
 
-    <!-- Indicador de Processamento -->
+    <!-- Indicador de Status -->
     <div id="statusOCR" class="hidden mb-6 p-4 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-between">
       <div class="flex items-center space-x-3">
         <i class="fa-solid fa-circle-notch fa-spin text-xl text-purple-600"></i>
-        <span id="textoStatus" class="text-sm font-medium">A enviar imagem...</span>
+        <span id="textoStatus" class="text-sm font-medium">A enviar imagem para processamento...</span>
       </div>
     </div>
 
-    <!-- Formulário -->
+    <!-- Formulário Principal -->
     <form id="formPedido" class="space-y-4" onsubmit="salvarPedido(event)">
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Localizador</label>
-        <input type="text" id="inputLocalizador" placeholder="Ex: 39419772" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Localizador / ID</label>
+        <input type="text" id="inputLocalizador" placeholder="Ex: 39419772 ou #1234" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
       </div>
 
       <div>
@@ -61,7 +61,7 @@
 
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Açaí / Itens do Pedido</label>
-        <textarea id="inputAcai" rows="3" placeholder="Descrição dos itens..." class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none"></textarea>
+        <textarea id="inputAcai" rows="3" placeholder="Descrição dos itens do pedido..." class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none"></textarea>
       </div>
 
       <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-xl shadow-md transition flex items-center justify-center space-x-2">
@@ -69,11 +69,17 @@
         <span>Confirmar e Salvar Pedido</span>
       </button>
     </form>
+
+    <!-- Área de Depuração: Texto Bruto Reconhecido -->
+    <div class="mt-8 border-t pt-4">
+      <h2 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Texto Lido da Foto (Resultado Bruto):</h2>
+      <textarea id="debugTextoLido" rows="6" readonly class="w-full p-3 bg-gray-100 text-xs text-gray-700 font-mono rounded-xl border border-gray-200" placeholder="O texto extraído da foto aparecerá aqui..."></textarea>
+    </div>
   </div>
 
   <script>
-    // CHAVE DA API DA OCR.SPACE
-    const API_KEY = 'K83857299588957'; 
+    // INSERIR A SUA CHAVE DE API OBTIDA EM https://ocr.space/ocrapi
+    const API_KEY = 'K83857299588957';
 
     async function enviarParaOCR(event) {
       const file = event.target.files[0];
@@ -81,19 +87,20 @@
 
       const statusBox = document.getElementById('statusOCR');
       const textoStatus = document.getElementById('textoStatus');
+      const debugBox = document.getElementById('debugTextoLido');
 
       statusBox.classList.remove('hidden');
-      textoStatus.innerText = 'A enviar foto para leitura na nuvem...';
+      textoStatus.innerText = 'A enviar imagem para a nuvem...';
+      debugBox.value = 'A aguardar resposta da API...';
 
       try {
-        // Prepara os dados para envio
         const formData = new FormData();
         formData.append('file', file);
         formData.append('apikey', API_KEY);
-        formData.append('language', 'por'); // Português
+        formData.append('language', 'por');
         formData.append('isTable', 'true');
         formData.append('scale', 'true');
-        formData.append('OCREngine', '2'); // Motor 2 é otimizado para recibos/números
+        formData.append('OCREngine', '2'); // Motor de leitura otimizado para recibos
 
         const response = await fetch('https://api.ocr.space/parse/image', {
           method: 'POST',
@@ -103,24 +110,30 @@
         const data = await response.json();
 
         if (data.IsErroredOnProcessing) {
-          throw new Error(data.ErrorMessage || 'Erro ao processar imagem');
+          throw new Error(data.ErrorMessage || 'Erro ao ler a imagem');
         }
 
         const textoLido = data.ParsedResults[0]?.ParsedText || '';
-        console.log('Texto retornado da Nuvem:\n', textoLido);
+        
+        // Exibe o texto completo lido no campo de debug
+        debugBox.value = textoLido.length > 0 ? textoLido : 'Nenhum texto detetado na imagem.';
 
-        extrairDadosDoTexto(textoLido);
+        // Processa o texto extraído para preencher os campos do formulário
+        extrairDadosComanda(textoLido);
 
         textoStatus.innerText = 'Leitura concluída com sucesso!';
-        setTimeout(() => statusBox.classList.add('hidden'), 2000);
+        setTimeout(() => statusBox.classList.add('hidden'), 2500);
 
       } catch (err) {
         console.error(err);
-        textoStatus.innerText = 'Falha na leitura. Verifique a chave de API.';
+        textoStatus.innerText = 'Erro na leitura. Verifique a chave de API ou a foto.';
+        debugBox.value = 'Erro ao processar imagem: ' + err.message;
       }
     }
 
-    function extrairDadosDoTexto(texto) {
+    function extrairDadosComanda(texto) {
+      if (!texto) return;
+
       const linhas = texto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
       let localizador = '';
@@ -128,70 +141,70 @@
       let enderecoPartes = [];
       let itensPartes = [];
 
-      let lendoEndereco = false;
-      let lendoItens = false;
+      let emEndereco = false;
+      let emItens = false;
 
       for (let i = 0; i < linhas.length; i++) {
         const linha = linhas[i];
         const linhaLower = linha.toLowerCase();
 
-        // 1. LOCALIZADOR (ex: 3941 9772)
-        if (linhaLower.includes('localizador:')) {
-          const match = linha.match(/\d[\d\s-]{6,}\d/);
-          if (match) localizador = match[0].replace(/\s+/g, '');
+        // 1. Procurar por Localizador / ID (#XXXX ou 8 dígitos)
+        if (linhaLower.includes('localizador') || linhaLower.includes('pedido')) {
+          const matchNum = linha.match(/#?\d[\d\s-]{3,}/);
+          if (matchNum) localizador = matchNum[0].replace(/\s+/g, '');
         } else if (!localizador) {
-          const matchId = linha.match(/\b\d{4}\s?\d{4}\b/);
-          if (matchId) localizador = matchId[0].replace(/\s+/g, '');
+          const matchGenerico = linha.match(/\b\d{4}\s?\d{4}\b/);
+          if (matchGenerico) localizador = matchGenerico[0].replace(/\s+/g, '');
         }
 
-        // 2. NOME DO CLIENTE (linha após "...pedidos na sua loja")
-        if (linhaLower.includes('pedidos na sua loja') || linhaLower.includes('na sua loja')) {
+        // 2. Procurar por Nome do Cliente
+        if (linhaLower.includes('cliente') || linhaLower.includes('loja')) {
           if (i + 1 < linhas.length) {
-            const possivelNome = linhas[i + 1];
-            if (!possivelNome.toLowerCase().includes('endereco') && !possivelNome.match(/^\d[\d\s-]{5,}/)) {
-              nome = possivelNome;
+            const linhaSeguinte = linhas[i + 1];
+            if (!linhaSeguinte.toLowerCase().includes('rua') && !linhaSeguinte.toLowerCase().includes('enderec')) {
+              nome = linhaSeguinte;
             }
           }
         }
 
-        // 3. ENDEREÇO (a partir de "Endereco:")
-        if (linhaLower.includes('endereco:') || linhaLower.includes('endereço:')) {
-          lendoEndereco = true;
-          lendoItens = false;
-          const textoEndereco = linha.replace(/endere[cç]o:/i, '').trim();
-          if (textoEndereco) enderecoPartes.push(textoEndereco);
+        // 3. Capturar Endereço
+        if (linhaLower.includes('enderec') || linhaLower.includes('entrega')) {
+          emEndereco = true;
+          emItens = false;
+          const posTexto = linha.replace(/endere[cç]o:|entrega:/i, '').trim();
+          if (posTexto) enderecoPartes.push(posTexto);
           continue;
         }
 
-        if (lendoEndereco) {
-          if (linhaLower.includes('itens do pedido') || linhaLower.includes('pagamento')) {
-            lendoEndereco = false;
+        if (emEndereco) {
+          if (linhaLower.includes('item') || linhaLower.includes('itens') || linhaLower.includes('pagamento')) {
+            emEndereco = false;
           } else {
             enderecoPartes.push(linha);
           }
         }
 
-        // 4. ITENS DO PEDIDO (a partir de "ITENS DO PEDIDO")
-        if (linhaLower.includes('itens do pedido')) {
-          lendoItens = true;
-          lendoEndereco = false;
+        // 4. Capturar Itens
+        if (linhaLower.includes('item') || linhaLower.includes('itens')) {
+          emItens = true;
+          emEndereco = false;
           continue;
         }
 
-        if (lendoItens) {
-          if (linhaLower.includes('pagamento') || linhaLower.includes('valor total')) {
-            lendoItens = false;
+        if (emItens) {
+          if (linhaLower.includes('total') || linhaLower.includes('pagamento') || linhaLower.includes('subtotal')) {
+            emItens = false;
           } else {
             itensPartes.push(linha);
           }
         }
       }
 
-      // Preenche os campos do formulário
-      if (localizador) document.getElementById('inputLocalizador').value = localizador.toUpperCase();
+      // Atribuição aos campos
+      if (localizador) document.getElementById('inputLocalizador').value = localizador;
       if (nome) document.getElementById('inputNome').value = nome;
       if (enderecoPartes.length > 0) document.getElementById('inputEndereco').value = enderecoPartes.join(', ');
-      if (itensPartes.length > 0) document.getElementById('inputAcai').value = itensPartes.join(' | ');
+      if (itensPartes.length > 0) document.getElementById('inputAcai').value = itensPartes.join('\n');
     }
 
     function salvarPedido(event) {
