@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestor de Pedidos por Comanda</title>
+  <link rel="manifest" href="manifest.json">
+  <!-- Biblioteca Tesseract.js para OCR -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #f4f5f7;
+      color: #333;
+      padding: 15px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    .header h1 {
+      color: #ea1d2c;
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .header p {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 4px;
+    }
+    .card {
+      background: #fff;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 15px;
+    }
+    .date-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fff;
+      padding: 10px 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      border: 1px solid #e2e8f0;
+    }
+    .date-container label {
+      font-weight: bold;
+      font-size: 0.9rem;
+      color: #4a5568;
+    }
+    .date-container input[type="date"] {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e0;
+      font-size: 0.9rem;
+      outline: none;
+      color: #2d3748;
+    }
+    .form-group {
+      margin-bottom: 10px;
+    }
+    .form-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .form-row select, .form-row input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    .input-field {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .btn {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn-dark {
+      background-color: #2d3748;
+      color: #fff;
+    }
+    .btn-danger {
+      background-color: #ea1d2c;
+      color: #fff;
+    }
+    .btn-outline {
+      background-color: transparent;
+      border: 2px dashed #ea1d2c;
+      color: #ea1d2c;
+    }
+    .btn-block {
+      width: 100%;
+    }
+    .photo-input-wrapper {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+      width: 100%;
+    }
+    .photo-input-wrapper input[type=file] {
+      font-size: 100px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .preview-container {
+      margin-top: 10px;
+      text-align: center;
+    }
+    .preview-container img {
+      max-width: 100%;
+      max-height: 150px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+    .ocr-loading {
+      display: none;
+      font-size: 0.85rem;
+      color: #d69e2e;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 8px;
+    }
+    .rota-header {
+      background-color: #ea1d2c;
+      color: white;
+      padding: 12px 15px;
+      border-radius: 10px 10px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+    }
+    .btn-clear-rota {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+    .rota-content {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      padding: 12px;
+      margin-bottom: 15px;
+    }
+    .pedido-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px dashed #eee;
+    }
+    .pedido-item:last-child {
+      border-bottom: none;
+    }
+    .pedido-info {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .pedido-img {
+      width: 55px;
+      height: 55px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+    .pedido-detalhes {
+      font-size: 0.85rem;
+      color: #4a5568;
+    }
+    .pedido-detalhes strong {
+      color: #ea1d2c;
+      font-size: 0.95rem;
+    }
+    .empty-state {
+      text-align: center;
+      color: #a0aec0;
+      font-size: 0.85rem;
+      padding: 15px 0;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal img {
+      max-width: 90%;
+      max-height: 80%;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>🛵 Gestor de Pedidos por Comanda</h1>
+    <p>Tire a foto da comanda para escanear automaticamente</p>
+  </div>
+
+  <!-- Seleção por Dia -->
+  <div class="date-container">
+    <label for="filtroData">📅 Data das Rotas:</label>
+    <input type="date" id="filtroData">
+  </div>
+
+  <!-- Form de Adicionar -->
+  <div class="card">
+    <div class="form-group form-row">
+      <label style="white-space: nowrap; font-weight: bold;">Adicionar em:</label>
+      <select id="selectRota"></select>
+      <button class="btn btn-dark" onclick="adicionarNovaRota()">+ Nova Rota</button>
+    </div>
+
+    <div class="form-group">
+      <div class="photo-input-wrapper">
+        <button class="btn btn-outline btn-block" type="button">📷 Tirar Foto da Comanda (Escanear)</button>
+        <input type="file" id="inputFoto" accept="image/*" capture="environment" onchange="processarFotoEOCR(event)">
+      </div>
+      <div id="ocrLoading" class="ocr-loading">🔍 Escaneando dados da comanda... Aguarde!</div>
+    </div>
+
+    <!-- Campos preenchidos automaticamente ou manualmente -->
+    <div class="form-group">
+      <input type="text" id="inputLocalizador" class="input-field" placeholder="LOCALIZADOR (ex: 1234ABCD)" style="text-transform: uppercase;">
+    </div>
+    <div class="form-group">
+      <input type="text" id="inputNome" class="input-field" placeholder="NOME DO CLIENTE">
+    </div>
+    <div class="form-group">
+      <input type="text" id="inputEndereco" class="input-field" placeholder="ENDEREÇO DE ENTREGA">
+    </div>
+    <div class="form-group">
+      <input type="text" id="inputAcai" class="input-field" placeholder="AÇAÍ / DETALHES DO PEDIDO">
+    </div>
+
+    <button class="btn btn-danger btn-block" onclick="salvarPedido()">+ Salvar Pedido</button>
+
+    <div id="previewArea" class="preview-container" style="display: none;">
+      <img id="imgPreview" src="" alt="Pré-visualização">
+    </div>
+  </div>
+
+  <!-- Lista de Rotas do Dia -->
+  <div id="containerRotas"></div>
+
+  <!-- Modal para Zoom de Imagem -->
+  <div id="modalFoto" class="modal" onclick="fecharModal()">
+    <img id="imgModal" src="">
+  </div>
+
+  <script>
+    let appData = JSON.parse(localStorage.getItem('ifood_rotas_db')) || {};
+    let fotoBase64Atual = '';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const hoje = new Date().toISOString().split('T')[0];
+      const campoData = document.getElementById('filtroData');
+      campoData.value = hoje;
+
+      campoData.addEventListener('change', () => {
+        carregarInterface();
+      });
+
+      carregarInterface();
+    });
+
+    function getDataSelecionada() {
+      return document.getElementById('filtroData').value;
+    }
+
+    function inicializarDia(dataStr) {
+      if (!appData[dataStr]) {
+        appData[dataStr] = {
+          rotas: ['Rota 1'],
+          pedidos: []
+        };
+        salvarStorage();
+      }
+    }
+
+    function salvarStorage() {
+      localStorage.setItem('ifood_rotas_db', JSON.stringify(appData));
+    }
+
+    function carregarInterface() {
+      const dataStr = getDataSelecionada();
+      inicializarDia(dataStr);
+
+      const dadosDoDia = appData[dataStr];
+
+      const select = document.getElementById('selectRota');
+      select.innerHTML = '';
+      dadosDoDia.rotas.forEach(rota => {
+        const option = document.createElement('option');
+        option.value = rota;
+        option.textContent = rota;
+        select.appendChild(option);
+      });
+
+      const container = document.getElementById('containerRotas');
+      container.innerHTML = '';
+
+      dadosDoDia.rotas.forEach(rota => {
+        const pedidosDaRota = dadosDoDia.pedidos.filter(p => p.rota === rota);
+
+        const cardRota = document.createElement('div');
+        cardRota.innerHTML = `
+          <div class="rota-header">
+            <span>🛵 ${rota} (${pedidosDaRota.length} pedidos)</span>
+            <button class="btn-clear-rota" onclick="limparRota('${rota}')">Limpar ${rota} X</button>
+          </div>
+          <div class="rota-content">
+            ${pedidosDaRota.length === 0 ? '<div class="empty-state">Nenhum pedido cadastrado nesta rota ainda.</div>' : ''}
+            ${pedidosDaRota.map(p => `
+              <div class="pedido-item">
+                <div class="pedido-info">
+                  ${p.foto ? `<img src="${p.foto}" class="pedido-img" onclick="abrirModal('${p.foto}')">` : '<div style="width:55px;height:55px;background:#eee;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#aaa">Sem foto</div>'}
+                  <div class="pedido-detalhes">
+                    <strong># ${p.localizador}</strong>${p.nome ? `- ${p.nome}` : ''}<br>
+                    ${p.endereco ? `📍 ${p.endereco}<br>` : ''}
+                    ${p.acai ? `🍧 ${p.acai}` : ''}
+                  </div>
+                </div>
+                <button class="btn-clear-rota" style="background:#edf2f7; color:#e53e3e" onclick="removerPedido(${p.id})">🗑️</button>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        container.appendChild(cardRota);
+      });
+    }
+
+    function adicionarNovaRota() {
+      const dataStr = getDataSelecionada();
+      const numProximaRota = appData[dataStr].rotas.length + 1;
+      const nomeNovaRota = `Rota ${numProximaRota}`;
+      
+      appData[dataStr].rotas.push(nomeNovaRota);
+      salvarStorage();
+      carregarInterface();
+      document.getElementById('selectRota').value = nomeNovaRota;
+    }
+
+    function processarFotoEOCR(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.src = e.target.result;
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const scaleSize = MAX_WIDTH / img.width;
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scaleSize;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          fotoBase64Atual = canvas.toDataURL('image/jpeg', 0.7);
+          document.getElementById('imgPreview').src = fotoBase64Atual;
+          document.getElementById('previewArea').style.display = 'block';
+
+          // Iniciar Leitura OCR
+          escanearComanda(fotoBase64Atual);
+        };
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function escanearComanda(imagemData) {
+      const loading = document.getElementById('ocrLoading');
+      loading.style.display = 'block';
+
+      Tesseract.recognize(
+        imagemData,
+        'por', // Idioma Português
+        { logger: m => console.log(m) }
+      ).then(({ data: { text } }) => {
+        loading.style.display = 'none';
+        extrairDadosDoTexto(text);
+      }).catch(err => {
+        loading.style.display = 'none';
+        console.error('Erro no OCR:', err);
+      });
+    }
+
+    function extrairDadosDoTexto(texto) {
+      console.log('Texto Lido:', texto);
+
+      // Tenta encontrar o Localizador (código de 8 dígitos/letras)
+      const locMatch = texto.match(/\b[A-Z0-9]{4}[- ]?[A-Z0-9]{4}\b/i) || texto.match(/\b[A-Z0-9]{8}\b/i);
+      if (locMatch) {
+        document.getElementById('inputLocalizador').value = locMatch[0].replace(/[- ]/g, '').toUpperCase();
+      }
+
+      // Procurar linhas relevantes
+      const linhas = texto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+      linhas.forEach(linha => {
+        const linhaLower = linha.toLowerCase();
+
+        // Extrai Endereço (se contiver palavras como rua, av, alameda, nº)
+        if (linhaLower.includes('rua') || linhaLower.includes('av') || linhaLower.includes('bairro') || linhaLower.includes('nº')) {
+          if (!document.getElementById('inputEndereco').value) {
+            document.getElementById('inputEndereco').value = linha;
+          }
+        }
+
+        // Extrai Açaí / Produto
+        if (linhaLower.includes('açaí') || linhaLower.includes('acai') || linhaLower.includes('ml') || linhaLower.includes('copo')) {
+          if (!document.getElementById('inputAcai').value) {
+            document.getElementById('inputAcai').value = linha;
+          }
+        }
+
+        // Extrai Nome (se contiver "Cliente:" ou "Entregar para:")
+        if (linhaLower.includes('cliente') || linhaLower.includes('para:')) {
+          const partes = linha.split(':');
+          if (partes[1]) {
+            document.getElementById('inputNome').value = partes[1].trim();
+          }
+        }
+      });
+    }
+
+    function salvarPedido() {
+      const dataStr = getDataSelecionada();
+      const rota = document.getElementById('selectRota').value;
+      const localizador = document.getElementById('inputLocalizador').value.trim().toUpperCase();
+      const nome = document.getElementById('inputNome').value.trim();
+      const endereco = document.getElementById('inputEndereco').value.trim();
+      const acai = document.getElementById('inputAcai').value.trim();
+
+      if (!localizador) {
+        alert('Por favor, digite ou escaneie o localizador do pedido.');
+        return;
+      }
+
+      const novoPedido = {
+        id: Date.now(),
+        rota: rota,
+        localizador: localizador,
+        nome: nome,
+        endereco: endereco,
+        acai: acai,
+        foto: fotoBase64Atual
+      };
+
+      appData[dataStr].pedidos.push(novoPedido);
+      salvarStorage();
+
+      // Limpar formulário
+      document.getElementById('inputLocalizador').value = '';
+      document.getElementById('inputNome').value = '';
+      document.getElementById('inputEndereco').value = '';
+      document.getElementById('inputAcai').value = '';
+      document.getElementById('inputFoto').value = '';
+      document.getElementById('previewArea').style.display = 'none';
+      fotoBase64Atual = '';
+
+      carregarInterface();
+    }
+
+    function removerPedido(id) {
+      const dataStr = getDataSelecionada();
+      appData[dataStr].pedidos = appData[dataStr].pedidos.filter(p => p.id !== id);
+      salvarStorage();
+      carregarInterface();
+    }
+
+    function limparRota(rota) {
+      if (confirm(`Tem certeza que deseja apagar todos os pedidos da ${rota}?`)) {
+        const dataStr = getDataSelecionada();
+        appData[dataStr].pedidos = appData[dataStr].pedidos.filter(p => p.rota !== rota);
+        salvarStorage();
+        carregarInterface();
+      }
+    }
+
+    function abrirModal(src) {
+      document.getElementById('imgModal').src = src;
+      document.getElementById('modalFoto').style.display = 'flex';
+    }
+
+    function fecharModal() {
+      document.getElementById('modalFoto').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
