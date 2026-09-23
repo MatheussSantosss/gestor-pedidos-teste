@@ -3,536 +3,248 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestor de Pedidos por Comanda</title>
-  <link rel="manifest" href="manifest.json">
-  <!-- Biblioteca Tesseract.js para OCR -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <title>Gestor de Pedidos - Teste Scanner</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome Ícones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Tesseract.js (Biblioteca OCR para leitura de imagens) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
     body {
-      background-color: #f4f5f7;
-      color: #333;
-      padding: 15px;
-      max-width: 600px;
-      margin: 0 auto;
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 15px;
-    }
-    .header h1 {
-      color: #ea1d2c;
-      font-size: 1.3rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    .header p {
-      font-size: 0.85rem;
-      color: #666;
-      margin-top: 4px;
-    }
-    .card {
-      background: #fff;
-      padding: 15px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      margin-bottom: 15px;
-    }
-    .date-container {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #fff;
-      padding: 10px 15px;
-      border-radius: 10px;
-      margin-bottom: 15px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-      border: 1px solid #e2e8f0;
-    }
-    .date-container label {
-      font-weight: bold;
-      font-size: 0.9rem;
-      color: #4a5568;
-    }
-    .date-container input[type="date"] {
-      padding: 6px 10px;
-      border-radius: 6px;
-      border: 1px solid #cbd5e0;
-      font-size: 0.9rem;
-      outline: none;
-      color: #2d3748;
-    }
-    .form-group {
-      margin-bottom: 10px;
-    }
-    .form-row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-    .form-row select, .form-row input {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 0.95rem;
-    }
-    .input-field {
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 0.9rem;
-      outline: none;
-    }
-    .btn {
-      padding: 10px 14px;
-      border: none;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 0.9rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-    .btn-dark {
-      background-color: #2d3748;
-      color: #fff;
-    }
-    .btn-danger {
-      background-color: #ea1d2c;
-      color: #fff;
-    }
-    .btn-outline {
-      background-color: transparent;
-      border: 2px dashed #ea1d2c;
-      color: #ea1d2c;
-    }
-    .btn-block {
-      width: 100%;
-    }
-    .photo-input-wrapper {
-      position: relative;
-      overflow: hidden;
-      display: inline-block;
-      width: 100%;
-    }
-    .photo-input-wrapper input[type=file] {
-      font-size: 100px;
-      position: absolute;
-      left: 0;
-      top: 0;
-      opacity: 0;
-      cursor: pointer;
-    }
-    .preview-container {
-      margin-top: 10px;
-      text-align: center;
-    }
-    .preview-container img {
-      max-width: 100%;
-      max-height: 150px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-    }
-    .ocr-loading {
-      display: none;
-      font-size: 0.85rem;
-      color: #d69e2e;
-      font-weight: bold;
-      text-align: center;
-      margin-top: 8px;
-    }
-    .rota-header {
-      background-color: #ea1d2c;
-      color: white;
-      padding: 12px 15px;
-      border-radius: 10px 10px 0 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-weight: bold;
-    }
-    .btn-clear-rota {
-      background: rgba(255,255,255,0.2);
-      border: none;
-      color: white;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      cursor: pointer;
-    }
-    .rota-content {
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-top: none;
-      border-radius: 0 0 10px 10px;
-      padding: 12px;
-      margin-bottom: 15px;
-    }
-    .pedido-item {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px dashed #eee;
-    }
-    .pedido-item:last-child {
-      border-bottom: none;
-    }
-    .pedido-info {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-    }
-    .pedido-img {
-      width: 55px;
-      height: 55px;
-      object-fit: cover;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      cursor: pointer;
-    }
-    .pedido-detalhes {
-      font-size: 0.85rem;
-      color: #4a5568;
-    }
-    .pedido-detalhes strong {
-      color: #ea1d2c;
-      font-size: 0.95rem;
-    }
-    .empty-state {
-      text-align: center;
-      color: #a0aec0;
-      font-size: 0.85rem;
-      padding: 15px 0;
-    }
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.85);
-      justify-content: center;
-      align-items: center;
-    }
-    .modal img {
-      max-width: 90%;
-      max-height: 80%;
-      border-radius: 8px;
+      background-color: #f3f4f6;
     }
   </style>
 </head>
-<body>
+<body class="p-4 md:p-8">
 
-  <div class="header">
-    <h1>🛵 Gestor de Pedidos por Comanda</h1>
-    <p>Tire a foto da comanda para escanear automaticamente</p>
-  </div>
+  <div class="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">
+      <i class="fa-solid fa-receipt text-purple-600 mr-2"></i> Leitor de Comanda iFood
+    </h1>
 
-  <!-- Seleção por Dia -->
-  <div class="date-container">
-    <label for="filtroData">📅 Data das Rotas:</label>
-    <input type="date" id="filtroData">
-  </div>
-
-  <!-- Form de Adicionar -->
-  <div class="card">
-    <div class="form-group form-row">
-      <label style="white-space: nowrap; font-weight: bold;">Adicionar em:</label>
-      <select id="selectRota"></select>
-      <button class="btn btn-dark" onclick="adicionarNovaRota()">+ Nova Rota</button>
+    <!-- Botão de Captura/Upload da Imagem -->
+    <div class="mb-6">
+      <label for="cameraInput" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-purple-400 rounded-xl cursor-pointer bg-purple-50 hover:bg-purple-100 transition">
+        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+          <i class="fa-solid fa-camera text-3xl text-purple-600 mb-2"></i>
+          <p class="text-sm text-purple-700 font-semibold">Tirar Foto ou Carregar Comanda</p>
+          <p class="text-xs text-purple-500">Toque para abrir a câmara ou galeria</p>
+        </div>
+        <input id="cameraInput" type="file" accept="image/*" capture="environment" class="hidden" onchange="processarImagem(event)">
+      </label>
     </div>
 
-    <div class="form-group">
-      <div class="photo-input-wrapper">
-        <button class="btn btn-outline btn-block" type="button">📷 Tirar Foto da Comanda (Escanear)</button>
-        <input type="file" id="inputFoto" accept="image/*" capture="environment" onchange="processarFotoEOCR(event)">
+    <!-- Indicador de Carregamento / Progresso -->
+    <div id="statusOCR" class="hidden mb-6 p-4 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <i class="fa-solid fa-circle-notch fa-spin text-xl text-blue-600"></i>
+        <span id="textoStatus" class="text-sm font-medium">A ler a comanda...</span>
       </div>
-      <div id="ocrLoading" class="ocr-loading">🔍 Escaneando dados da comanda... Aguarde!</div>
+      <span id="progressoOCR" class="text-xs font-bold bg-blue-200 px-2 py-1 rounded-full">0%</span>
     </div>
 
-    <!-- Campos preenchidos automaticamente ou manualmente -->
-    <div class="form-group">
-      <input type="text" id="inputLocalizador" class="input-field" placeholder="LOCALIZADOR (ex: 1234ABCD)" style="text-transform: uppercase;">
-    </div>
-    <div class="form-group">
-      <input type="text" id="inputNome" class="input-field" placeholder="NOME DO CLIENTE">
-    </div>
-    <div class="form-group">
-      <input type="text" id="inputEndereco" class="input-field" placeholder="ENDEREÇO DE ENTREGA">
-    </div>
-    <div class="form-group">
-      <input type="text" id="inputAcai" class="input-field" placeholder="AÇAÍ / DETALHES DO PEDIDO">
-    </div>
+    <!-- Formulário com Preenchimento Automático -->
+    <form id="formPedido" class="space-y-4" onsubmit="salvarPedido(event)">
 
-    <button class="btn btn-danger btn-block" onclick="salvarPedido()">+ Salvar Pedido</button>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Localizador</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+            <i class="fa-solid fa-hashtag"></i>
+          </span>
+          <input type="text" id="inputLocalizador" placeholder="Ex: 39419772" class="w-full pl-10 pr-4 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+        </div>
+      </div>
 
-    <div id="previewArea" class="preview-container" style="display: none;">
-      <img id="imgPreview" src="" alt="Pré-visualização">
-    </div>
-  </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Nome do Cliente</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+            <i class="fa-solid fa-user"></i>
+          </span>
+          <input type="text" id="inputNome" placeholder="Ex: Leandra Silva" class="w-full pl-10 pr-4 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+        </div>
+      </div>
 
-  <!-- Lista de Rotas do Dia -->
-  <div id="containerRotas"></div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Endereço de Entrega</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+            <i class="fa-solid fa-location-dot"></i>
+          </span>
+          <textarea id="inputEndereco" rows="3" placeholder="Rua, Número, Bairro..." class="w-full pl-10 pr-4 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none"></textarea>
+        </div>
+      </div>
 
-  <!-- Modal para Zoom de Imagem -->
-  <div id="modalFoto" class="modal" onclick="fecharModal()">
-    <img id="imgModal" src="">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Açaí / Itens do Pedido</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+            <i class="fa-solid fa-bowl-food"></i>
+          </span>
+          <textarea id="inputAcai" rows="3" placeholder="Descrição do açaí e adicionais..." class="w-full pl-10 pr-4 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none"></textarea>
+        </div>
+      </div>
+
+      <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-xl shadow-md transition flex items-center justify-center space-x-2">
+        <i class="fa-solid fa-check"></i>
+        <span>Confirmar e Salvar Pedido</span>
+      </button>
+
+    </form>
   </div>
 
   <script>
-    let appData = JSON.parse(localStorage.getItem('ifood_rotas_db')) || {};
-    let fotoBase64Atual = '';
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const hoje = new Date().toISOString().split('T')[0];
-      const campoData = document.getElementById('filtroData');
-      campoData.value = hoje;
-
-      campoData.addEventListener('change', () => {
-        carregarInterface();
-      });
-
-      carregarInterface();
-    });
-
-    function getDataSelecionada() {
-      return document.getElementById('filtroData').value;
-    }
-
-    function inicializarDia(dataStr) {
-      if (!appData[dataStr]) {
-        appData[dataStr] = {
-          rotas: ['Rota 1'],
-          pedidos: []
-        };
-        salvarStorage();
-      }
-    }
-
-    function salvarStorage() {
-      localStorage.setItem('ifood_rotas_db', JSON.stringify(appData));
-    }
-
-    function carregarInterface() {
-      const dataStr = getDataSelecionada();
-      inicializarDia(dataStr);
-
-      const dadosDoDia = appData[dataStr];
-
-      const select = document.getElementById('selectRota');
-      select.innerHTML = '';
-      dadosDoDia.rotas.forEach(rota => {
-        const option = document.createElement('option');
-        option.value = rota;
-        option.textContent = rota;
-        select.appendChild(option);
-      });
-
-      const container = document.getElementById('containerRotas');
-      container.innerHTML = '';
-
-      dadosDoDia.rotas.forEach(rota => {
-        const pedidosDaRota = dadosDoDia.pedidos.filter(p => p.rota === rota);
-
-        const cardRota = document.createElement('div');
-        cardRota.innerHTML = `
-          <div class="rota-header">
-            <span>🛵 ${rota} (${pedidosDaRota.length} pedidos)</span>
-            <button class="btn-clear-rota" onclick="limparRota('${rota}')">Limpar ${rota} X</button>
-          </div>
-          <div class="rota-content">
-            ${pedidosDaRota.length === 0 ? '<div class="empty-state">Nenhum pedido cadastrado nesta rota ainda.</div>' : ''}
-            ${pedidosDaRota.map(p => `
-              <div class="pedido-item">
-                <div class="pedido-info">
-                  ${p.foto ? `<img src="${p.foto}" class="pedido-img" onclick="abrirModal('${p.foto}')">` : '<div style="width:55px;height:55px;background:#eee;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#aaa">Sem foto</div>'}
-                  <div class="pedido-detalhes">
-                    <strong># ${p.localizador}</strong>${p.nome ? `- ${p.nome}` : ''}<br>
-                    ${p.endereco ? `📍 ${p.endereco}<br>` : ''}
-                    ${p.acai ? `🍧 ${p.acai}` : ''}
-                  </div>
-                </div>
-                <button class="btn-clear-rota" style="background:#edf2f7; color:#e53e3e" onclick="removerPedido(${p.id})">🗑️</button>
-              </div>
-            `).join('')}
-          </div>
-        `;
-        container.appendChild(cardRota);
-      });
-    }
-
-    function adicionarNovaRota() {
-      const dataStr = getDataSelecionada();
-      const numProximaRota = appData[dataStr].rotas.length + 1;
-      const nomeNovaRota = `Rota ${numProximaRota}`;
-      
-      appData[dataStr].rotas.push(nomeNovaRota);
-      salvarStorage();
-      carregarInterface();
-      document.getElementById('selectRota').value = nomeNovaRota;
-    }
-
-    function processarFotoEOCR(event) {
+    // Processa a foto tirada pelo utilizador
+    async function processarImagem(event) {
       const file = event.target.files[0];
       if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = new Image();
-        img.src = e.target.result;
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 800;
-          const scaleSize = MAX_WIDTH / img.width;
-          canvas.width = MAX_WIDTH;
-          canvas.height = img.height * scaleSize;
+      const statusBox = document.getElementById('statusOCR');
+      const textoStatus = document.getElementById('textoStatus');
+      const progressoOCR = document.getElementById('progressoOCR');
 
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      statusBox.classList.remove('hidden');
+      textoStatus.innerText = 'Iniciando leitura...';
+      progressoOCR.innerText = '0%';
 
-          fotoBase64Atual = canvas.toDataURL('image/jpeg', 0.7);
-          document.getElementById('imgPreview').src = fotoBase64Atual;
-          document.getElementById('previewArea').style.display = 'block';
+      try {
+        // Executa o Tesseract.js em Português
+        const result = await Tesseract.recognize(
+          file,
+          'por',
+          {
+            logger: m => {
+              if (m.status === 'recognizing text') {
+                const pct = Math.round((m.progress || 0) * 100);
+                textoStatus.innerText = 'A ler comanda...';
+                progressoOCR.innerText = `${pct}%`;
+              }
+            }
+          }
+        );
 
-          // Iniciar Leitura OCR
-          escanearComanda(fotoBase64Atual);
-        };
-      };
-      reader.readAsDataURL(file);
-    }
+        const textoLido = result.data.text;
+        extrairDadosDoTexto(textoLido);
 
-    function escanearComanda(imagemData) {
-      const loading = document.getElementById('ocrLoading');
-      loading.style.display = 'block';
+        textoStatus.innerText = 'Dados extraídos com sucesso!';
+        progressoOCR.innerText = '100%';
+        setTimeout(() => statusBox.classList.add('hidden'), 2500);
 
-      Tesseract.recognize(
-        imagemData,
-        'por', // Idioma Português
-        { logger: m => console.log(m) }
-      ).then(({ data: { text } }) => {
-        loading.style.display = 'none';
-        extrairDadosDoTexto(text);
-      }).catch(err => {
-        loading.style.display = 'none';
-        console.error('Erro no OCR:', err);
-      });
-    }
-
-    function extrairDadosDoTexto(texto) {
-      console.log('Texto Lido:', texto);
-
-      // Tenta encontrar o Localizador (código de 8 dígitos/letras)
-      const locMatch = texto.match(/\b[A-Z0-9]{4}[- ]?[A-Z0-9]{4}\b/i) || texto.match(/\b[A-Z0-9]{8}\b/i);
-      if (locMatch) {
-        document.getElementById('inputLocalizador').value = locMatch[0].replace(/[- ]/g, '').toUpperCase();
+      } catch (err) {
+        console.error(err);
+        textoStatus.innerText = 'Erro ao ler a comanda. Tente novamente.';
+        progressoOCR.innerText = 'Erro';
       }
+    }
 
-      // Procurar linhas relevantes
+    // Função ajustada para a comanda do iFood
+    function extrairDadosDoTexto(texto) {
+      console.log('Texto OCR Lido:\n', texto);
+
+      // Divide o texto em linhas limpas
       const linhas = texto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-      linhas.forEach(linha => {
+      let localizador = '';
+      let nome = '';
+      let enderecoPartes = [];
+      let itensPartes = [];
+
+      let lendoEndereco = false;
+      let lendoItens = false;
+
+      for (let i = 0; i < linhas.length; i++) {
+        const linha = linhas[i];
         const linhaLower = linha.toLowerCase();
 
-        // Extrai Endereço (se contiver palavras como rua, av, alameda, nº)
-        if (linhaLower.includes('rua') || linhaLower.includes('av') || linhaLower.includes('bairro') || linhaLower.includes('nº')) {
-          if (!document.getElementById('inputEndereco').value) {
-            document.getElementById('inputEndereco').value = linha;
+        // 1. EXTRAIR LOCALIZADOR
+        if (linhaLower.includes('localizador:')) {
+          const match = linha.match(/\d[\d\s-]{6,}\d/);
+          if (match) {
+            localizador = match[0].replace(/\s+/g, '');
+          }
+        } else if (!localizador) {
+          // Busca alternativa por padrão de números do Localizador iFood (ex: 3941 9772)
+          const matchId = linha.match(/\b\d{4}\s?\d{4}\b/);
+          if (matchId) localizador = matchId[0].replace(/\s+/g, '');
+        }
+
+        // 2. EXTRAIR NOME DO CLIENTE
+        // Na comanda do iFood, o nome fica na linha seguinte a "...pedidos na sua loja"
+        if (linhaLower.includes('pedidos na sua loja') || linhaLower.includes('na sua loja')) {
+          if (i + 1 < linhas.length) {
+            const possivelNome = linhas[i + 1];
+            // Garante que não capturou a linha de telefone ou ID
+            if (!possivelNome.toLowerCase().includes('endereco') && !possivelNome.match(/^\d[\d\s-]{5,}/)) {
+              nome = possivelNome;
+            }
           }
         }
 
-        // Extrai Açaí / Produto
-        if (linhaLower.includes('açaí') || linhaLower.includes('acai') || linhaLower.includes('ml') || linhaLower.includes('copo')) {
-          if (!document.getElementById('inputAcai').value) {
-            document.getElementById('inputAcai').value = linha;
+        // 3. EXTRAIR ENDEREÇO
+        if (linhaLower.includes('endereco:') || linhaLower.includes('endereço:')) {
+          lendoEndereco = true;
+          lendoItens = false;
+          const textoEndereco = linha.replace(/endere[cç]o:/i, '').trim();
+          if (textoEndereco) enderecoPartes.push(textoEndereco);
+          continue;
+        }
+
+        if (lendoEndereco) {
+          // Para de ler o endereço quando chega em "ITENS DO PEDIDO" ou "Pagamento"
+          if (linhaLower.includes('itens do pedido') || linhaLower.includes('pagamento')) {
+            lendoEndereco = false;
+          } else {
+            // Guarda as linhas de endereço (Comp, Bairro, Cidade, etc.)
+            enderecoPartes.push(linha);
           }
         }
 
-        // Extrai Nome (se contiver "Cliente:" ou "Entregar para:")
-        if (linhaLower.includes('cliente') || linhaLower.includes('para:')) {
-          const partes = linha.split(':');
-          if (partes[1]) {
-            document.getElementById('inputNome').value = partes[1].trim();
+        // 4. EXTRAIR AÇAÍ / ITENS DO PEDIDO
+        if (linhaLower.includes('itens do pedido')) {
+          lendoItens = true;
+          lendoEndereco = false;
+          continue;
+        }
+
+        if (lendoItens) {
+          // Para de ler os itens quando chega ao bloco de pagamento
+          if (linhaLower.includes('pagamento') || linhaLower.includes('valor total')) {
+            lendoItens = false;
+          } else {
+            itensPartes.push(linha);
           }
         }
-      });
-    }
-
-    function salvarPedido() {
-      const dataStr = getDataSelecionada();
-      const rota = document.getElementById('selectRota').value;
-      const localizador = document.getElementById('inputLocalizador').value.trim().toUpperCase();
-      const nome = document.getElementById('inputNome').value.trim();
-      const endereco = document.getElementById('inputEndereco').value.trim();
-      const acai = document.getElementById('inputAcai').value.trim();
-
-      if (!localizador) {
-        alert('Por favor, digite ou escaneie o localizador do pedido.');
-        return;
       }
 
-      const novoPedido = {
-        id: Date.now(),
-        rota: rota,
-        localizador: localizador,
-        nome: nome,
-        endereco: endereco,
-        acai: acai,
-        foto: fotoBase64Atual
-      };
+      // Preenchimento automático nos campos de texto
+      if (localizador) {
+        document.getElementById('inputLocalizador').value = localizador.toUpperCase();
+      }
 
-      appData[dataStr].pedidos.push(novoPedido);
-      salvarStorage();
+      if (nome) {
+        document.getElementById('inputNome').value = nome;
+      }
 
-      // Limpar formulário
-      document.getElementById('inputLocalizador').value = '';
-      document.getElementById('inputNome').value = '';
-      document.getElementById('inputEndereco').value = '';
-      document.getElementById('inputAcai').value = '';
-      document.getElementById('inputFoto').value = '';
-      document.getElementById('previewArea').style.display = 'none';
-      fotoBase64Atual = '';
+      if (enderecoPartes.length > 0) {
+        document.getElementById('inputEndereco').value = enderecoPartes.join(', ');
+      }
 
-      carregarInterface();
-    }
-
-    function removerPedido(id) {
-      const dataStr = getDataSelecionada();
-      appData[dataStr].pedidos = appData[dataStr].pedidos.filter(p => p.id !== id);
-      salvarStorage();
-      carregarInterface();
-    }
-
-    function limparRota(rota) {
-      if (confirm(`Tem certeza que deseja apagar todos os pedidos da ${rota}?`)) {
-        const dataStr = getDataSelecionada();
-        appData[dataStr].pedidos = appData[dataStr].pedidos.filter(p => p.rota !== rota);
-        salvarStorage();
-        carregarInterface();
+      if (itensPartes.length > 0) {
+        document.getElementById('inputAcai').value = itensPartes.join(' | ');
       }
     }
 
-    function abrirModal(src) {
-      document.getElementById('imgModal').src = src;
-      document.getElementById('modalFoto').style.display = 'flex';
-    }
-
-    function fecharModal() {
-      document.getElementById('modalFoto').style.display = 'none';
+    function salvarPedido(event) {
+      event.preventDefault();
+      alert('Pedido processado com sucesso!');
     }
   </script>
+
 </body>
 </html>
